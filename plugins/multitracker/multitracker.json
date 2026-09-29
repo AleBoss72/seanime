@@ -2,7 +2,7 @@
   "id": "aleboss-multitracker",
   "name": "AniList ↔ MAL Sync",
   "version": "0.3.0",
-  "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/main/plugins/multitracker/multitracker.json",
+  "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/22a4b55a6ec1484077bff780ff1752f40beff99e/plugins/multitracker/multitracker.json",
   "language": "typescript",
   "type": "plugin",
   "description": "Bidirectional AniList and MyAnimeList synchronization for anime and manga in Seanime.",

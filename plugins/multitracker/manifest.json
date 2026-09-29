@@ -1,0 +1,45 @@
+{
+  "id": "aleboss-multitracker",
+  "name": "MultiTracker",
+  "version": "0.1.0",
+  "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/plugins/multitracker/manifest.json",
+  "language": "typescript",
+  "type": "plugin",
+  "description": "Central bidirectional tracker framework for Seanime anime and manga.",
+  "author": "AleBoss72",
+  "icon": "",
+  "website": "https://github.com/AleBoss72/seanime",
+  "lang": "en",
+  "notes": "Experimental bootstrap. Captures Seanime anime/manga updates and centralizes conflict policy; remote tracker adapters are not enabled yet.",
+  "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/plugins/multitracker/provider.ts",
+  "userConfig": {
+    "requiresConfig": false,
+    "version": 1,
+    "fields": [
+      {
+        "name": "conflictPolicy",
+        "label": "Conflict policy (newest / seanime / highest / ask)",
+        "type": "text",
+        "default": "newest"
+      },
+      {
+        "name": "pollMinutes",
+        "label": "Remote polling interval (minutes)",
+        "type": "number",
+        "default": 15
+      }
+    ]
+  },
+  "plugin": {
+    "version": "1",
+    "permissions": {
+      "scopes": [
+        "storage",
+        "anilist",
+        "database",
+        "anilist-token",
+        "playback"
+      ]
+    }
+  }
+}

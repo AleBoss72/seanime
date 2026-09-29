@@ -1,18 +1,36 @@
-# MultiTracker
+# AniList ↔ MAL Sync
 
-Central tracker framework for Seanime.
+Seanime plugin focused only on synchronization between **AniList** and **MyAnimeList**.
 
-Target architecture:
+## Current scope
 
-- bidirectional sync;
-- anime + manga;
-- Seanime/AniList as the canonical local identity layer;
-- MyAnimeList and Kitsu for anime+manga;
-- SIMKL and Trakt where their media models apply;
-- conflict policies: newest change, Seanime wins, highest progress, manual;
-- loop prevention using last-known local/remote state;
-- initial import/export/merge preview.
+- Anime: AniList ↔ MyAnimeList
+- Manga: AniList ↔ MyAnimeList
+- MAL OAuth login and token refresh
+- Live Seanime/AniList → MAL updates for progress and list changes
+- Manual AniList → MAL synchronization
+- Manual MAL → AniList synchronization
+- Add-missing, update-existing and full mirror modes
+- Status, progress, score, dates and repeat/reread fields where supported
 
-## Status
+Kitsu, SIMKL, Trakt and other trackers are intentionally out of scope for now.
 
-v0.1.0 is the safe bootstrap: Seanime entry/progress/repeat/delete hooks are wired and the central configuration/state UI exists. Remote adapter writes are deliberately disabled until each OAuth/API adapter is integrated and tested.
+## Direct install
+
+`https://raw.githubusercontent.com/AleBoss72/seanime/main/plugins/multitracker/multitracker.json`
+
+## Authentication note
+
+The current implementation is based on the MIT-licensed `MyAnimeListSync` plugin by **nnotwen** and currently reuses its MAL OAuth application/client and hosted callback. This keeps login functional without requiring a separate MAL developer application.
+
+## Sync behavior
+
+Changes made through Seanime/AniList are pushed live to MAL when automatic progress updating is enabled in Seanime.
+
+For the reverse direction, open the plugin and use **Perform Manual Sync → Sync to AniList**. This imports/updates AniList from the current MAL list.
+
+This means both directions are supported, but MAL → AniList is currently user-triggered rather than continuously polled in the background.
+
+## Attribution
+
+Based on nnotwen/n-seanime-extensions MyAnimeListSync (MIT).

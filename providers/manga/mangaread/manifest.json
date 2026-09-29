@@ -1,0 +1,14 @@
+{
+  "id": "mangareadorg",
+  "name": "MangaRead.org",
+  "version": "1.0.4",
+  "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/providers/manga/mangaread/manifest.json",
+  "language": "javascript",
+  "type": "manga-provider",
+  "description": "MangaRead.org manga provider for Seanime (Madara).",
+  "author": "AleBoss72",
+  "icon": "",
+  "website": "https://www.mangaread.org/",
+  "lang": "en",
+  "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/providers/manga/mangaread/provider.js"
+}

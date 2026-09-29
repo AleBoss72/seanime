@@ -1,7 +1,7 @@
 {
   "id": "aleboss-multitracker",
   "name": "AniList ↔ MAL Sync",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/main/plugins/multitracker/multitracker.json",
   "language": "typescript",
   "type": "plugin",
@@ -10,8 +10,8 @@
   "icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/icon.png",
   "website": "https://github.com/AleBoss72/seanime",
   "lang": "en",
-  "notes": "AniList ↔ MyAnimeList sync for anime and manga. Includes built-in MAL API client setup, explicit logout, fixed pinned tray icon, and a stable update channel. Based on nnotwen/MyAnimeListSync (MIT).",
-  "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/ac353ce3f126e2c26c5d9de4d5dd462477e3ff20/plugins/multitracker/provider.ts",
+  "notes": "AniList ↔ MyAnimeList sync for anime and manga. Includes built-in MAL API client setup, hosted callback UX, explicit logout, inline high-contrast tray icon, and stable update channel. Based on nnotwen/MyAnimeListSync (MIT).",
+  "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/0278e3c682c2ac2ca25bae30e21e88c0c27d1403/plugins/multitracker/provider.ts",
   "plugin": {
     "version": "1",
     "permissions": {

@@ -1,0 +1,10 @@
+{
+  "urls": [
+    "https://raw.githubusercontent.com/AleBoss72/seanime/main/providers/anime/animeworld/manifest.json",
+    "https://raw.githubusercontent.com/AleBoss72/seanime/main/providers/anime/animeunity/manifest.json",
+    "https://raw.githubusercontent.com/AleBoss72/seanime/main/providers/manga/weebcentral/manifest.json",
+    "https://raw.githubusercontent.com/AleBoss72/seanime/main/providers/manga/asurascans/manifest.json",
+    "https://raw.githubusercontent.com/AleBoss72/seanime/main/providers/manga/mangaread/manifest.json",
+    "https://raw.githubusercontent.com/AleBoss72/seanime/main/providers/manga/mangaworld/manifest.json"
+  ]
+}

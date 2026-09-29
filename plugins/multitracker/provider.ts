@@ -7,7 +7,7 @@
 // @ts-ignore
 function init() {
 	$ui.register((ctx) => {
-		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/AniList ↔ MAL Sync/icon.png";
+		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/MyAnimeListSync/icon.png";
 		const tray = ctx.newTray({
 			iconUrl,
 			withContent: true,

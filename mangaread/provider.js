@@ -54,23 +54,24 @@ class Provider {
         if (!mangaId) return [];
 
         const mangaUrl = this._absolute(mangaId).replace(/\/+$/, "");
-        const ajaxUrl = mangaUrl + "/ajax/chapters/";
 
-        // First use the normal Madara endpoint.
-        const ajaxHtml = await this._postForm(ajaxUrl, "");
-        let chapters = this._parseChapterList(ajaxHtml);
-
-        // MangaRead currently returns only 50 entries from this endpoint for
-        // some long-running series. The series feed/page exposes the complete
-        // chapter list, so use it whenever it contains more entries.
+        // MangaRead's AJAX chapter endpoint is capped at 50 entries for some
+        // long-running series. The public manga page contains the full list,
+        // so use it as the primary source.
+        let chapters = [];
         try {
-            const feedHtml = await this._getText(mangaUrl + "/feed/");
-            const feedChapters = this._parseFeedChapters(feedHtml, mangaUrl);
-            if (feedChapters.length > chapters.length) {
-                chapters = feedChapters;
-            }
+            const pageHtml = await this._getText(mangaUrl + "/");
+            chapters = this._parseFullChapterLinks(pageHtml, mangaUrl);
+            console.debug("MangaRead: full page chapter count", chapters.length);
         } catch (e) {
-            console.warn("MangaRead: full chapter feed fallback failed", e);
+            console.warn("MangaRead: full page chapter parsing failed", e);
+        }
+
+        // Fallback to the standard Madara endpoint if the page parser fails.
+        if (chapters.length === 0) {
+            const ajaxHtml = await this._postForm(mangaUrl + "/ajax/chapters/", "");
+            chapters = this._parseChapterList(ajaxHtml);
+            console.debug("MangaRead: AJAX chapter count", chapters.length);
         }
 
         chapters.sort((a, b) => {
@@ -81,6 +82,47 @@ class Provider {
         });
 
         chapters.forEach((c, i) => c.index = i);
+        return chapters;
+    }
+
+    _parseFullChapterLinks(html, mangaUrl) {
+        const chapters = [];
+        const seen = new Set();
+
+        // Accept any chapter URL belonging to this manga. This intentionally
+        // does not depend on Madara's chapter-list container because MangaRead
+        // renders the complete list directly on the series page.
+        const escapedBase = mangaUrl.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
+        const re = new RegExp(
+            '<a\\b[^>]*href=["\\\'](' + escapedBase + '/chapter-[^"\\\'?#]+/?)["\\\'][^>]*>([\\s\\S]*?)<\\/a>',
+            'gi'
+        );
+
+        let match;
+        while ((match = re.exec(html)) !== null) {
+            const chapterUrl = this._absolute(this._decode(match[1]));
+            if (seen.has(chapterUrl)) continue;
+
+            let title = this._decode(this._stripTags(match[2]))
+                .replace(/\s+/g, " ")
+                .trim();
+
+            const chapter = this._extractChapterNumber(title || chapterUrl);
+            if (!chapter || chapter === "0") continue;
+
+            if (!title) title = "Chapter " + chapter;
+
+            seen.add(chapterUrl);
+            chapters.push({
+                id: chapterUrl,
+                url: chapterUrl,
+                title: title,
+                chapter: chapter,
+                index: 0,
+                language: "en",
+            });
+        }
+
         return chapters;
     }
 
@@ -104,49 +146,7 @@ class Provider {
             )).replace(/\s+/g, " ").trim();
 
             const chapter = this._extractChapterNumber(title);
-            const date = this._decode(this._stripTags(
-                this._firstMatch(
-                    block,
-                    /<span\b[^>]*class=["'][^"']*\bchapter-release-date\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i
-                ) || ""
-            )).replace(/\s+/g, " ").trim();
 
-            chapters.push({
-                id: chapterUrl,
-                url: chapterUrl,
-                title: title || ("Chapter " + chapter),
-                chapter: chapter,
-                index: 0,
-                language: "en",
-                updatedAt: this._dateToIso(date),
-            });
-        }
-
-        return chapters;
-    }
-
-    _parseFeedChapters(html, mangaUrl) {
-        const chapters = [];
-        const seen = new Set();
-        const escapedBase = mangaUrl.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
-        const re = new RegExp(
-            '<a\\b[^>]*href=["\\\'](' + escapedBase + '/chapter-[^"\\\'?#/]+/?)["\\\'][^>]*>([\\s\\S]*?)<\\/a>',
-            'gi'
-        );
-        let match;
-
-        while ((match = re.exec(html)) !== null) {
-            const chapterUrl = this._absolute(this._decode(match[1]));
-            if (seen.has(chapterUrl)) continue;
-
-            const title = this._decode(this._stripTags(match[2]))
-                .replace(/\s+/g, " ")
-                .trim();
-
-            const chapter = this._extractChapterNumber(title || chapterUrl);
-            if (!chapter || chapter === "0") continue;
-
-            seen.add(chapterUrl);
             chapters.push({
                 id: chapterUrl,
                 url: chapterUrl,

@@ -87,7 +87,7 @@
     "id": "aleboss-multitracker",
     "name": "MultiTracker",
     "description": "Experimental central bidirectional tracker framework for anime and manga.",
-    "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/plugins/multitracker/manifest.json",
+    "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/main/plugins/multitracker/multitracker.json",
     "author": "AleBoss72",
     "type": "plugin",
     "language": "typescript",

@@ -1,0 +1,98 @@
+[
+  {
+    "id": "animeworld",
+    "name": "AnimeWorld",
+    "description": "AnimeWorld streaming provider for Italian subbed/dubbed anime.",
+    "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/c305482dbafd2a273d4af47ab92ad68dbd851ee2/providers/anime/animeworld/manifest.json",
+    "author": "AleBoss72",
+    "type": "onlinestream-provider",
+    "language": "typescript",
+    "lang": "it",
+    "icon": "",
+    "website": "https://www.animeworld.ac"
+  },
+  {
+    "id": "AnimeUnity",
+    "name": "AnimeUnity",
+    "description": "AnimeUnity streaming provider for Italian subbed/dubbed anime.",
+    "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/c305482dbafd2a273d4af47ab92ad68dbd851ee2/providers/anime/animeunity/manifest.json",
+    "author": "AleBoss72",
+    "type": "onlinestream-provider",
+    "language": "typescript",
+    "lang": "it",
+    "icon": "",
+    "website": "https://www.animeunity.so"
+  },
+  {
+    "id": "weebcentral",
+    "name": "WeebCentral",
+    "description": "WeebCentral manga provider for Seanime.",
+    "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/c305482dbafd2a273d4af47ab92ad68dbd851ee2/providers/manga/weebcentral/manifest.json",
+    "author": "AleBoss72",
+    "type": "manga-provider",
+    "language": "javascript",
+    "lang": "en",
+    "icon": "",
+    "website": "https://weebcentral.com"
+  },
+  {
+    "id": "asurascans",
+    "name": "AsuraScans",
+    "description": "AsuraScans manga provider for Seanime.",
+    "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/c305482dbafd2a273d4af47ab92ad68dbd851ee2/providers/manga/asurascans/manifest.json",
+    "author": "AleBoss72",
+    "type": "manga-provider",
+    "language": "javascript",
+    "lang": "en",
+    "icon": "",
+    "website": "https://asurascans.com"
+  },
+  {
+    "id": "mangareadorg",
+    "name": "MangaRead.org",
+    "description": "MangaRead.org manga provider for Seanime.",
+    "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/c305482dbafd2a273d4af47ab92ad68dbd851ee2/providers/manga/mangaread/manifest.json",
+    "author": "AleBoss72",
+    "type": "manga-provider",
+    "language": "javascript",
+    "lang": "en",
+    "icon": "",
+    "website": "https://www.mangaread.org"
+  },
+  {
+    "id": "mangaworld",
+    "name": "MangaWorld",
+    "description": "Italian MangaWorld manga provider for Seanime.",
+    "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/c305482dbafd2a273d4af47ab92ad68dbd851ee2/providers/manga/mangaworld/manifest.json",
+    "author": "AleBoss72",
+    "type": "manga-provider",
+    "language": "typescript",
+    "lang": "it",
+    "icon": "",
+    "website": "https://www.mangaworld.mx"
+  },
+  {
+    "id": "aleboss-reader-enhancer",
+    "name": "Reader Enhancer",
+    "description": "Desktop manga-reader enhancements including centered configurable page width.",
+    "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/c305482dbafd2a273d4af47ab92ad68dbd851ee2/plugins/reader-enhancer/manifest.json",
+    "author": "AleBoss72",
+    "type": "plugin",
+    "language": "typescript",
+    "lang": "en",
+    "icon": "",
+    "website": "https://github.com/AleBoss72/seanime"
+  },
+  {
+    "id": "aleboss-multitracker",
+    "name": "AniList ↔ MAL Sync",
+    "description": "Bidirectional AniList/MyAnimeList sync for anime and manga with built-in MAL API client setup.",
+    "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/c305482dbafd2a273d4af47ab92ad68dbd851ee2/plugins/multitracker/multitracker.json",
+    "author": "AleBoss72",
+    "type": "plugin",
+    "language": "typescript",
+    "lang": "en",
+    "icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/icon.png",
+    "website": "https://github.com/AleBoss72/seanime"
+  }
+]

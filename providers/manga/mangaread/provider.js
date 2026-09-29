@@ -89,25 +89,29 @@ class Provider {
         const chapters = [];
         const seen = new Set();
 
-        // Accept any chapter URL belonging to this manga. This intentionally
-        // does not depend on Madara's chapter-list container because MangaRead
-        // renders the complete list directly on the series page.
-        const escapedBase = mangaUrl.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
-        const re = new RegExp(
-            '<a\\b[^>]*href=["\\\'](' + escapedBase + '/chapter-[^"\\\'?#]+/?)["\\\'][^>]*>([\\s\\S]*?)<\\/a>',
-            'gi'
-        );
+        // MangaRead mixes absolute and relative chapter URLs.
+        // Match every anchor first, then keep only chapter links belonging
+        // to the current manga path.
+        const mangaPath = this._path(mangaUrl).replace(/\/+$/, "");
+        const anchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
 
         let match;
-        while ((match = re.exec(html)) !== null) {
-            const chapterUrl = this._absolute(this._decode(match[1]));
+        while ((match = anchorRe.exec(html)) !== null) {
+            const rawHref = this._decode(match[1]).trim();
+            if (!rawHref) continue;
+
+            const chapterUrl = this._absolute(rawHref);
+            const chapterPath = this._path(chapterUrl).replace(/\/+$/, "");
+
+            if (!chapterPath.startsWith(mangaPath + "/chapter-")) continue;
             if (seen.has(chapterUrl)) continue;
 
             let title = this._decode(this._stripTags(match[2]))
                 .replace(/\s+/g, " ")
                 .trim();
 
-            const chapter = this._extractChapterNumber(title || chapterUrl);
+            // URL fallback also handles titles hidden in nested spans.
+            const chapter = this._extractChapterNumber(title || chapterPath);
             if (!chapter || chapter === "0") continue;
 
             if (!title) title = "Chapter " + chapter;
@@ -116,8 +120,8 @@ class Provider {
             chapters.push({
                 id: chapterUrl,
                 url: chapterUrl,
-                title: title,
-                chapter: chapter,
+                title,
+                chapter,
                 index: 0,
                 language: "en",
             });

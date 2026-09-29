@@ -93,6 +93,26 @@
       ],
       "marketplace": "https://raw.githubusercontent.com/ASleepyDrink/Seanime-Stuff/main/marketplace.json",
       "notes": "Mixed personal marketplace with custom sources and plugins from several authors."
+    },
+    {
+      "name": "Seanime Manga Extensions",
+      "owner": "trashpenguin",
+      "repository": "https://github.com/trashpenguin/seanime-extensions",
+      "categories": [
+        "manga-providers"
+      ],
+      "marketplace": null,
+      "notes": "Manga provider collection with MangaDex, ComicK, WeebCentral and MangaPill. Providers are installed through individual manifest URLs."
+    }
+  ],
+  "featured_manifests": [
+    {
+      "name": "AnimeUnity",
+      "repository": "https://github.com/kRYstall9/Seanime-streaming-providers",
+      "manifest": "https://raw.githubusercontent.com/kRYstall9/Seanime-streaming-providers/main/src/AnimeUnity/animeunity.json",
+      "type": "onlinestream-provider",
+      "lang": "it",
+      "notes": "Direct install manifest from kRYstall9's Seanime streaming provider repository."
     }
   ]
 }

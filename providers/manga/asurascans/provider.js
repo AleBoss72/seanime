@@ -1,6 +1,7 @@
 class Provider {
   constructor() {
     this.api = "https://asurascans.com";
+    this.apiBase = "https://api.asurascans.com";
   }
 
   getSettings() {
@@ -65,34 +66,62 @@ class Provider {
   }
 
   async findChapters(mangaId) {
-    // mangaId is now the full public_url like "/comics/emperor-of-solo-play-fc4c7eba"
-    const comicUrl = `${this.api}${mangaId}`;
     try {
-      const response = await this.fetchWithHeaders(comicUrl);
-      if (!response.ok) return [];
-      const html = await response.text();
-
+      const slug = this._slugFromMangaId(mangaId);
       const chapters = [];
       const seen = new Set();
 
-      // Chapter links: href="/comics/{full-slug}/chapter/{num}"
-      const chapterRegex = /href="(\/comics\/[^"]+\/chapter\/([^"]+))"/gi;
-      let match;
-      while ((match = chapterRegex.exec(html)) !== null) {
-        const fullPath = match[1];
-        const chapterNum = match[2];
+      let offset = 0;
+      const limit = 100;
 
-        if (seen.has(chapterNum)) continue;
-        seen.add(chapterNum);
+      while (true) {
+        const url = `${this.apiBase}/api/series/${encodeURIComponent(slug)}/chapters?offset=${offset}&limit=${limit}`;
+        const response = await this.fetchWithHeaders(url);
+        if (!response.ok) {
+          console.error("Asura chapters API error:", response.status, response.statusText);
+          break;
+        }
 
-        chapters.push({
-          id: `${this.api}${fullPath}`,
-          title: `Chapter ${chapterNum}`,
-          chapter: chapterNum,
-        });
+        const json = await response.json();
+        const page = Array.isArray(json?.data) ? json.data : [];
+        if (!page.length) break;
+
+        let added = 0;
+        for (const ch of page) {
+          const chapterSlug = String(ch?.slug ?? "").trim();
+          const number = ch?.number != null ? String(ch.number) : chapterSlug;
+          const key = ch?.id != null ? String(ch.id) : chapterSlug;
+
+          if (!key || seen.has(key)) continue;
+          seen.add(key);
+          added++;
+
+          const seriesPath = mangaId.startsWith("http")
+            ? new URL(mangaId).pathname
+            : mangaId;
+          const normalizedSeriesPath = seriesPath.startsWith("/")
+            ? seriesPath
+            : `/comics/${seriesPath}`;
+
+          chapters.push({
+            id: `${this.api}${normalizedSeriesPath}/chapter/${chapterSlug}`,
+            title: ch?.title
+              ? `Chapter ${number} - ${String(ch.title).trim()}`
+              : `Chapter ${number}`,
+            chapter: number,
+          });
+        }
+
+        if (page.length < limit || added === 0) break;
+        offset += limit;
       }
 
-      return chapters.sort((a, b) => parseFloat(a.chapter) - parseFloat(b.chapter));
+      return chapters.sort((a, b) => {
+        const an = parseFloat(a.chapter);
+        const bn = parseFloat(b.chapter);
+        if (Number.isFinite(an) && Number.isFinite(bn)) return an - bn;
+        return String(a.chapter).localeCompare(String(b.chapter), undefined, { numeric: true });
+      });
     } catch (e) {
       console.error("findChapters error:", e);
       return [];
@@ -142,6 +171,25 @@ class Provider {
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
+
+  _slugFromMangaId(mangaId) {
+    const raw = String(mangaId || "").trim();
+    if (!raw) throw new Error("Missing manga ID");
+
+    let path = raw;
+    if (/^https?:\/\//i.test(path)) {
+      path = new URL(path).pathname;
+    }
+
+    path = path.split("?")[0].split("#")[0].replace(/^\/+|\/+$/g, "");
+    const parts = path.split("/").filter(Boolean);
+
+    let slug = parts.length >= 2 && (parts[0] === "comics" || parts[0] === "series")
+      ? parts[1]
+      : parts[parts.length - 1];
+
+    return String(slug || "").replace(/-f[0-9a-f]{6,8}$/i, "");
+  }
 
   // Extract and parse the props JSON from a named astro-island component.
   _extractAstroProps(html, componentName) {

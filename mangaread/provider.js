@@ -56,10 +56,37 @@ class Provider {
         const mangaUrl = this._absolute(mangaId).replace(/\/+$/, "");
         const ajaxUrl = mangaUrl + "/ajax/chapters/";
 
-        const html = await this._postForm(ajaxUrl, "");
+        // First use the normal Madara endpoint.
+        const ajaxHtml = await this._postForm(ajaxUrl, "");
+        let chapters = this._parseChapterList(ajaxHtml);
+
+        // MangaRead currently returns only 50 entries from this endpoint for
+        // some long-running series. The series feed/page exposes the complete
+        // chapter list, so use it whenever it contains more entries.
+        try {
+            const feedHtml = await this._getText(mangaUrl + "/feed/");
+            const feedChapters = this._parseFeedChapters(feedHtml, mangaUrl);
+            if (feedChapters.length > chapters.length) {
+                chapters = feedChapters;
+            }
+        } catch (e) {
+            console.warn("MangaRead: full chapter feed fallback failed", e);
+        }
+
+        chapters.sort((a, b) => {
+            const an = parseFloat(a.chapter);
+            const bn = parseFloat(b.chapter);
+            if (Number.isFinite(an) && Number.isFinite(bn) && an !== bn) return an - bn;
+            return a.title.localeCompare(b.title, undefined, { numeric: true });
+        });
+
+        chapters.forEach((c, i) => c.index = i);
+        return chapters;
+    }
+
+    _parseChapterList(html) {
         const chapters = [];
         const seen = new Set();
-
         const liRe = /<li\b[^>]*class=["'][^"']*\bwp-manga-chapter\b[^"']*["'][^>]*>([\s\S]*?)<\/li>/gi;
         let match;
 
@@ -77,13 +104,12 @@ class Provider {
             )).replace(/\s+/g, " ").trim();
 
             const chapter = this._extractChapterNumber(title);
-            const date =
-                this._decode(this._stripTags(
-                    this._firstMatch(
-                        block,
-                        /<span\b[^>]*class=["'][^"']*\bchapter-release-date\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i
-                    ) || ""
-                )).replace(/\s+/g, " ").trim();
+            const date = this._decode(this._stripTags(
+                this._firstMatch(
+                    block,
+                    /<span\b[^>]*class=["'][^"']*\bchapter-release-date\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i
+                ) || ""
+            )).replace(/\s+/g, " ").trim();
 
             chapters.push({
                 id: chapterUrl,
@@ -96,14 +122,41 @@ class Provider {
             });
         }
 
-        chapters.sort((a, b) => {
-            const an = parseFloat(a.chapter);
-            const bn = parseFloat(b.chapter);
-            if (Number.isFinite(an) && Number.isFinite(bn) && an !== bn) return an - bn;
-            return a.title.localeCompare(b.title, undefined, { numeric: true });
-        });
+        return chapters;
+    }
 
-        chapters.forEach((c, i) => c.index = i);
+    _parseFeedChapters(html, mangaUrl) {
+        const chapters = [];
+        const seen = new Set();
+        const escapedBase = mangaUrl.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
+        const re = new RegExp(
+            '<a\\b[^>]*href=["\\\'](' + escapedBase + '/chapter-[^"\\\'?#/]+/?)["\\\'][^>]*>([\\s\\S]*?)<\\/a>',
+            'gi'
+        );
+        let match;
+
+        while ((match = re.exec(html)) !== null) {
+            const chapterUrl = this._absolute(this._decode(match[1]));
+            if (seen.has(chapterUrl)) continue;
+
+            const title = this._decode(this._stripTags(match[2]))
+                .replace(/\s+/g, " ")
+                .trim();
+
+            const chapter = this._extractChapterNumber(title || chapterUrl);
+            if (!chapter || chapter === "0") continue;
+
+            seen.add(chapterUrl);
+            chapters.push({
+                id: chapterUrl,
+                url: chapterUrl,
+                title: title || ("Chapter " + chapter),
+                chapter: chapter,
+                index: 0,
+                language: "en",
+            });
+        }
+
         return chapters;
     }
 

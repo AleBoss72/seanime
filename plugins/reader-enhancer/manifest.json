@@ -1,0 +1,41 @@
+{
+  "id": "aleboss-reader-enhancer",
+  "name": "Reader Enhancer",
+  "version": "0.1.0",
+  "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/plugins/reader-enhancer/manifest.json",
+  "language": "typescript",
+  "type": "plugin",
+  "description": "Desktop manga-reader enhancements for Seanime, including centered configurable page width.",
+  "author": "AleBoss72",
+  "icon": "",
+  "website": "https://github.com/AleBoss72/seanime",
+  "lang": "en",
+  "notes": "Experimental. Works by decorating Seanime's reader DOM; selectors may need updates after Seanime UI changes.",
+  "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/plugins/reader-enhancer/provider.ts",
+  "userConfig": {
+    "requiresConfig": false,
+    "version": 1,
+    "fields": [
+      {
+        "name": "readerWidth",
+        "label": "Reader width (%)",
+        "type": "number",
+        "default": 50
+      },
+      {
+        "name": "readerMaxPx",
+        "label": "Optional max width (px, 0 = disabled)",
+        "type": "number",
+        "default": 0
+      }
+    ]
+  },
+  "plugin": {
+    "version": "1",
+    "permissions": {
+      "scopes": [
+        "storage"
+      ]
+    }
+  }
+}

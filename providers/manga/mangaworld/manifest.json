@@ -1,0 +1,26 @@
+{
+  "id": "mangaworld",
+  "name": "MangaWorld",
+  "version": "1.0.2-custom.1",
+  "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/providers/manga/mangaworld/manifest.json",
+  "language": "typescript",
+  "type": "manga-provider",
+  "description": "Italian MangaWorld provider for Seanime.",
+  "author": "AleBoss72 (based on kRYstall9)",
+  "icon": "",
+  "website": "https://www.mangaworld.mx",
+  "lang": "it",
+  "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/providers/manga/mangaworld/provider.ts",
+  "userConfig": {
+    "requiresConfig": false,
+    "version": 1,
+    "fields": [
+      {
+        "name": "api",
+        "label": "Base URL",
+        "type": "text",
+        "default": "https://www.mangaworld.mx"
+      }
+    ]
+  }
+}

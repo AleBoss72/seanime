@@ -1,0 +1,38 @@
+{
+  "id": "AnimeUnity",
+  "name": "AnimeUnity",
+  "version": "1.1.3-custom.1",
+  "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/providers/anime/animeunity/manifest.json",
+  "language": "typescript",
+  "type": "onlinestream-provider",
+  "description": "AnimeUnity streaming provider for Italian subbed/dubbed anime.",
+  "author": "AleBoss72 (based on kRYstall9)",
+  "icon": "",
+  "website": "https://www.animeunity.so",
+  "lang": "it",
+  "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/providers/anime/animeunity/provider.ts",
+  "userConfig": {
+    "requiresConfig": false,
+    "version": 1,
+    "fields": [
+      {
+        "name": "baseUrl",
+        "label": "Base URL",
+        "type": "text",
+        "default": "https://www.animeunity.so"
+      },
+      {
+        "name": "referrer",
+        "label": "Referrer",
+        "type": "text",
+        "default": "https://vixcloud.co/"
+      },
+      {
+        "name": "origin",
+        "label": "Origin",
+        "type": "text",
+        "default": "https://vixcloud.co"
+      }
+    ]
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "updated": "2026-09-29",
+  "description": "Curated external Seanime repositories and marketplaces. Entries remain external; this file does not mirror or bundle their contents.",
+  "repositories": [
+    {
+      "name": "Seanime Providers",
+      "owner": "Seanime-contributions",
+      "repository": "https://github.com/Seanime-contributions/Seanime-Providers",
+      "categories": [
+        "anime-providers",
+        "manga-providers",
+        "plugins"
+      ],
+      "marketplace": "https://raw.githubusercontent.com/Seanime-contributions/Seanime-Providers/main/marketplace/main.json",
+      "notes": "Large community provider collection; includes manga and anime sources."
+    },
+    {
+      "name": "Seanime Streaming Providers",
+      "owner": "kRYstall9",
+      "repository": "https://github.com/kRYstall9/Seanime-streaming-providers",
+      "categories": [
+        "anime-providers"
+      ],
+      "marketplace": null,
+      "notes": "Streaming-focused repository. AnimeWorld and AnimeUnity used as references/bases in this repo."
+    },
+    {
+      "name": "Seanime Manga Providers",
+      "owner": "kRYstall9",
+      "repository": "https://github.com/kRYstall9/Seanime-manga-providers",
+      "categories": [
+        "manga-providers"
+      ],
+      "marketplace": null,
+      "notes": "Manga-focused Seanime provider repository; MangaWorld implementation used as a reference/base."
+    },
+    {
+      "name": "n-seanime-extensions",
+      "owner": "nnotwen",
+      "repository": "https://github.com/nnotwen/n-seanime-extensions",
+      "categories": [
+        "plugins",
+        "tracking"
+      ],
+      "marketplace": null,
+      "notes": "Plugin collection with MyAnimeListSync, KitsuSync, ShikimoriSync, SimklSync and TraktSync."
+    },
+    {
+      "name": "seanime-extensions",
+      "owner": "Carloss616",
+      "repository": "https://github.com/Carloss616/seanime-extensions",
+      "categories": [
+        "plugins",
+        "manga-tools",
+        "custom-sources"
+      ],
+      "marketplace": "https://raw.githubusercontent.com/Carloss616/seanime-extensions/main/marketplace.json",
+      "notes": "Plugins and custom sources, including MangaUpdates sync, local catalog tools and UI customization."
+    },
+    {
+      "name": "Seanime Community Marketplace",
+      "owner": "Bas1874",
+      "repository": "https://github.com/Bas1874/Seanime-Marketplace",
+      "categories": [
+        "marketplace",
+        "plugins",
+        "anime-providers",
+        "manga-providers"
+      ],
+      "marketplace": "https://raw.githubusercontent.com/Bas1874/Seanime-Marketplace/main/Marketplace/Main.json",
+      "notes": "Broad community marketplace aggregating many independently maintained Seanime extensions."
+    },
+    {
+      "name": "Seanime Marketplace",
+      "owner": "Seanime-contributions",
+      "repository": "https://github.com/Seanime-contributions/seanime-marketplace",
+      "categories": [
+        "marketplace",
+        "plugins",
+        "providers"
+      ],
+      "marketplace": "https://raw.githubusercontent.com/Seanime-contributions/seanime-marketplace/main/plugins.json",
+      "notes": "General Seanime marketplace with plugins, extensions and CSS-related community resources."
+    },
+    {
+      "name": "Seanime Stuff",
+      "owner": "ASleepyDrink",
+      "repository": "https://github.com/ASleepyDrink/Seanime-Stuff",
+      "categories": [
+        "marketplace",
+        "custom-sources",
+        "plugins"
+      ],
+      "marketplace": "https://raw.githubusercontent.com/ASleepyDrink/Seanime-Stuff/main/marketplace.json",
+      "notes": "Mixed personal marketplace with custom sources and plugins from several authors."
+    }
+  ]
+}

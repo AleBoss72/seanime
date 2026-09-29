@@ -452,9 +452,17 @@ function init() {
 			},
 		};
 
+		const HOSTED_MAL_CALLBACK = "https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/callback.html";
+
+		// Migrate the legacy localhost callback automatically.
+		const savedRedirect = String($storage.get("mal.redirectUri") ?? "");
+		if (!savedRedirect || /^https?:\/\/localhost(?::\d+)?\/?$/i.test(savedRedirect)) {
+			$storage.set("mal.redirectUri", HOSTED_MAL_CALLBACK);
+		}
+
 		const clientIdRef = ctx.fieldRef<string>(String($storage.get("mal.clientId") ?? ""));
 		const clientSecretRef = ctx.fieldRef<string>(String($storage.get("mal.clientSecret") ?? ""));
-		const redirectUriRef = ctx.fieldRef<string>(String($storage.get("mal.redirectUri") ?? "https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/callback.html"));
+		const redirectUriRef = ctx.fieldRef<string>(String($storage.get("mal.redirectUri") ?? HOSTED_MAL_CALLBACK));
 		const setupFeedback = ctx.state<string | null>(null);
 
 		const application = {
@@ -465,7 +473,7 @@ function init() {
 				return String($storage.get("mal.clientSecret") ?? "");
 			},
 			get redirectUri() {
-				return String($storage.get("mal.redirectUri") ?? "https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/callback.html");
+				return String($storage.get("mal.redirectUri") ?? HOSTED_MAL_CALLBACK);
 			},
 			userAgent: "AniList ↔ MAL Sync for Seanime",
 			baseUri: "https://api.myanimelist.net/v2/",
@@ -1134,7 +1142,7 @@ function init() {
 
 				const redirectUriInput = tray.input({
 					label: "Redirect URI",
-					placeholder: "https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/callback.html",
+					placeholder: HOSTED_MAL_CALLBACK,
 					fieldRef: redirectUriRef,
 					disabled: state.loggingIn.get(),
 				});
@@ -1147,7 +1155,7 @@ function init() {
 					onClick: ctx.eventHandler("mal:save-client-config", () => {
 						const clientId = clientIdRef.current.trim();
 						const clientSecret = clientSecretRef.current.trim();
-						const redirectUri = redirectUriRef.current.trim() || "https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/callback.html";
+						const redirectUri = redirectUriRef.current.trim() || HOSTED_MAL_CALLBACK;
 
 						if (!clientId || !clientSecret) {
 							setupFeedback.set("Client ID and Client Secret are required.");

@@ -6,7 +6,7 @@ Nothing listed here is copied automatically into the AleBoss72 marketplace. Each
 
 ## Collections
 
-| Repository | Main focus | Marketplace |
+| Repository | Main focus | Marketplace / install method |
 |---|---|---|
 | [Seanime Providers](https://github.com/Seanime-contributions/Seanime-Providers) | Anime + manga providers + plugins | `https://raw.githubusercontent.com/Seanime-contributions/Seanime-Providers/main/marketplace/main.json` |
 | [Seanime Streaming Providers](https://github.com/kRYstall9/Seanime-streaming-providers) | Anime streaming providers | Individual manifests |
@@ -16,6 +16,23 @@ Nothing listed here is copied automatically into the AleBoss72 marketplace. Each
 | [Seanime Community Marketplace](https://github.com/Bas1874/Seanime-Marketplace) | Broad community marketplace | `https://raw.githubusercontent.com/Bas1874/Seanime-Marketplace/main/Marketplace/Main.json` |
 | [Seanime Marketplace](https://github.com/Seanime-contributions/seanime-marketplace) | Plugins, providers and community extensions | `https://raw.githubusercontent.com/Seanime-contributions/seanime-marketplace/main/plugins.json` |
 | [Seanime Stuff](https://github.com/ASleepyDrink/Seanime-Stuff) | Mixed custom sources/plugins | `https://raw.githubusercontent.com/ASleepyDrink/Seanime-Stuff/main/marketplace.json` |
+| [trashpenguin/seanime-extensions](https://github.com/trashpenguin/seanime-extensions) | Manga providers: MangaDex, ComicK, WeebCentral, MangaPill | Individual manifests |
+
+## Featured direct manifests
+
+These are useful individual extensions from external repositories.
+
+### AnimeUnity — kRYstall9
+
+Repository:
+
+`https://github.com/kRYstall9/Seanime-streaming-providers`
+
+Direct manifest:
+
+`https://raw.githubusercontent.com/kRYstall9/Seanime-streaming-providers/main/src/AnimeUnity/animeunity.json`
+
+The GitHub `blob` URL is for viewing the file; Seanime should receive the **raw** manifest URL above when installing it directly.
 
 ## Machine-readable index
 

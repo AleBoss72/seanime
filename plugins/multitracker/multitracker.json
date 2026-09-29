@@ -1,8 +1,8 @@
 {
   "id": "aleboss-multitracker",
   "name": "AniList ↔ MAL Sync",
-  "version": "0.2.1",
-  "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/f8f90826a5888478ff5224499ef55467c648c845/plugins/multitracker/multitracker.json",
+  "version": "0.2.2",
+  "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/main/plugins/multitracker/multitracker.json",
   "language": "typescript",
   "type": "plugin",
   "description": "Bidirectional AniList and MyAnimeList synchronization for anime and manga in Seanime.",
@@ -10,8 +10,8 @@
   "icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/icon.png",
   "website": "https://github.com/AleBoss72/seanime",
   "lang": "en",
-  "notes": "Requires AniList login in Seanime. MAL OAuth currently uses the upstream MyAnimeListSync OAuth application/callback. Supports anime and manga, live Seanime/AniList → MAL updates, plus manual AniList → MAL and MAL → AniList list synchronization. Based on nnotwen/MyAnimeListSync (MIT).",
-  "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/111f22885ba254d1e6b530d826305b569239aba7/plugins/multitracker/provider.ts",
+  "notes": "AniList ↔ MyAnimeList sync for anime and manga. MAL OAuth callback fixed. Based on nnotwen/MyAnimeListSync (MIT).",
+  "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/1231b44479990c931d6e8c3a55e9cbdc3a8c6b62/plugins/multitracker/provider.ts",
   "plugin": {
     "version": "1",
     "permissions": {

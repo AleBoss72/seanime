@@ -171,37 +171,20 @@ class Provider {
             html = await this._getText(chapterUrl + separator + "style=list");
         }
 
-        let reading = html;
-        const start = html.search(/<div\b[^>]*class=["'][^"']*\breading-content\b[^"']*["'][^>]*>/i);
-        if (start >= 0) {
-            reading = html.slice(start, Math.min(html.length, start + 2000000));
-        }
-
         const pages = [];
         const seen = new Set();
-        const imgRe = /<img\b[^>]*>/gi;
-        let match;
 
-        while ((match = imgRe.exec(reading)) !== null) {
-            const tag = match[0];
+        const addPage = (raw) => {
+            if (!raw) return;
+            let value = this._decode(String(raw))
+                .replace(/\\\//g, "/")
+                .replace(/\\u002F/gi, "/")
+                .replace(/\\u0026/gi, "&")
+                .trim();
 
-            let raw =
-                this._attr(tag, "data-src") ||
-                this._attr(tag, "data-lazy-src") ||
-                this._attr(tag, "data-lzl-src") ||
-                this._attr(tag, "data-cfsrc") ||
-                this._attr(tag, "data-manga-src") ||
-                this._bestSrcset(this._attr(tag, "srcset")) ||
-                this._attr(tag, "src");
-
-            if (!raw) continue;
-
-            raw = this._decode(raw.trim());
-            const imageUrl = this._absolute(raw);
-
-            if (!/^https?:\/\//i.test(imageUrl)) continue;
-            if (seen.has(imageUrl)) continue;
-            if (/(avatar|logo|icon|emoji|spinner|loading|ads?[-_.])/i.test(imageUrl)) continue;
+            const imageUrl = this._absolute(value);
+            if (!/^https?:\/\//i.test(imageUrl)) return;
+            if (seen.has(imageUrl)) return;
 
             seen.add(imageUrl);
             pages.push({
@@ -211,8 +194,54 @@ class Provider {
                     Referer: chapterUrl,
                 },
             });
+        };
+
+        // Primary strategy: MangaRead stores chapter pages under the Madara
+        // WP-manga data directory. Match these URLs directly from the HTML so
+        // the parser is unaffected by lazy-loading attributes or wrapper markup.
+        const directImageRe = /(?:https?:)?\\?\/\\?\/[^"'<>\\s]*mangaread\.org\\?\/wp-content\\?\/uploads\\?\/WP-manga\\?\/data\\?\/[^"'<>\\s]+?\.(?:jpg|jpeg|png|webp|gif)(?:\?[^"'<>\\s]*)?/gi;
+        let match;
+        while ((match = directImageRe.exec(html)) !== null) {
+            addPage(match[0]);
         }
 
+        // Relative URLs are also used on some chapters.
+        const relativeImageRe = /["']((?:\\?\/)?wp-content\\?\/uploads\\?\/WP-manga\\?\/data\\?\/[^"']+?\.(?:jpg|jpeg|png|webp|gif)(?:\?[^"']*)?)["']/gi;
+        while ((match = relativeImageRe.exec(html)) !== null) {
+            let raw = match[1].replace(/\\\//g, "/");
+            if (!raw.startsWith("/")) raw = "/" + raw;
+            addPage(raw);
+        }
+
+        // Fallback: parse ordinary/lazy-loaded img tags inside reading-content.
+        if (pages.length === 0) {
+            let reading = html;
+            const start = html.search(/<div\b[^>]*class=["'][^"']*\breading-content\b[^"']*["'][^>]*>/i);
+            if (start >= 0) {
+                reading = html.slice(start, Math.min(html.length, start + 4000000));
+            }
+
+            const imgRe = /<img\b[^>]*>/gi;
+            while ((match = imgRe.exec(reading)) !== null) {
+                const tag = match[0];
+
+                const raw =
+                    this._attr(tag, "data-src") ||
+                    this._attr(tag, "data-lazy-src") ||
+                    this._attr(tag, "data-lzl-src") ||
+                    this._attr(tag, "data-cfsrc") ||
+                    this._attr(tag, "data-manga-src") ||
+                    this._bestSrcset(this._attr(tag, "srcset")) ||
+                    this._attr(tag, "src");
+
+                if (!raw) continue;
+                const decoded = this._decode(raw);
+                if (/(avatar|logo|icon|emoji|spinner|loading|ads?[-_.])/i.test(decoded)) continue;
+                addPage(decoded);
+            }
+        }
+
+        console.debug("MangaRead: page count", pages.length, { chapterUrl: chapterUrl });
         return pages;
     }
 

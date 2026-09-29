@@ -449,7 +449,7 @@ function init() {
 		const application = {
 			clientId: "204cc9247a57a5750a93787a6fbef485",
 			userAgent: "AniList ↔ MAL Sync for Seanime",
-			redirectUri: "https://nnotwen.github.io/n-seanime-extensions/plugins/AniList ↔ MAL Sync/callback.html",
+			redirectUri: "https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/callback.html",
 			baseUri: "https://api.myanimelist.net/v2/",
 			currentAuthUrl: ctx.state<string | null>(null),
 			legal: {
@@ -459,8 +459,8 @@ function init() {
 				async fetch() {
 					this.isFetching.set(true);
 					return Promise.all([
-						ctx.fetch(`https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/AniList ↔ MAL Sync/PRIVACY.md`),
-						ctx.fetch(`https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/AniList ↔ MAL Sync/TERMS.md`),
+						ctx.fetch(`https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/MyAnimeListSync/PRIVACY.md`),
+						ctx.fetch(`https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/MyAnimeListSync/TERMS.md`),
 					])
 						.then(([privacy, terms]) => {
 							if (!privacy.ok || !terms.ok) throw new Error(!privacy.ok ? privacy.statusText : terms.statusText);

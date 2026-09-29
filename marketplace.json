@@ -85,14 +85,14 @@
   },
   {
     "id": "aleboss-multitracker",
-    "name": "MultiTracker",
-    "description": "Experimental central bidirectional tracker framework for anime and manga.",
+    "name": "AniList ↔ MAL Sync",
+    "description": "Bidirectional AniList and MyAnimeList sync for anime and manga.",
     "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/main/plugins/multitracker/multitracker.json",
-    "author": "AleBoss72",
+    "author": "AleBoss72 (based on nnotwen/MyAnimeListSync)",
     "type": "plugin",
     "language": "typescript",
     "lang": "en",
-    "icon": "",
+    "icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/icon.png",
     "website": "https://github.com/AleBoss72/seanime"
   }
 ]

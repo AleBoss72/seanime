@@ -20,13 +20,13 @@
         "name": "readerWidth",
         "label": "Reader width (%)",
         "type": "number",
-        "default": 50
+        "default": "50"
       },
       {
         "name": "readerMaxPx",
         "label": "Optional max width (px, 0 = disabled)",
         "type": "number",
-        "default": 0
+        "default": "0"
       }
     ]
   },

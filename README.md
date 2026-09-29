@@ -82,3 +82,14 @@ See `THIRD_PARTY_NOTICES.md`.
 A curated list of external Seanime repositories and marketplaces is available in [community/README.md](community/README.md).
 
 These repositories stay external and are not automatically merged into this marketplace.
+
+
+## Bulk install providers
+
+Seanime can bulk-import provider extensions from:
+
+`https://raw.githubusercontent.com/AleBoss72/seanime/main/extensions.json`
+
+Use **Extensions → Add extensions → Import from repository**, paste the URL, click **Import all**, review the detected providers, then **Install all**.
+
+Seanime intentionally excludes `plugin` extensions from repository bulk installation, so plugins such as AniList ↔ MAL Sync and Reader Enhancer should be installed from the Marketplace or their manifest URL.

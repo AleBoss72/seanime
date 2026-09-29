@@ -7,7 +7,13 @@
 // @ts-ignore
 function init() {
 	$ui.register((ctx) => {
-		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/MyAnimeListSync/icon.png";
+		const iconUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+				<rect width="64" height="64" rx="14" fill="#2E51A2"/>
+				<path d="M11 42V22h7l6 9 6-9h7v20h-7V32l-6 9-6-9v10z" fill="white"/>
+				<path d="M42 22h6v14h8v6H42z" fill="white"/>
+			</svg>
+		`);
 		const tray = ctx.newTray({
 			iconUrl,
 			withContent: true,
@@ -448,7 +454,7 @@ function init() {
 
 		const clientIdRef = ctx.fieldRef<string>(String($storage.get("mal.clientId") ?? ""));
 		const clientSecretRef = ctx.fieldRef<string>(String($storage.get("mal.clientSecret") ?? ""));
-		const redirectUriRef = ctx.fieldRef<string>(String($storage.get("mal.redirectUri") ?? "http://localhost"));
+		const redirectUriRef = ctx.fieldRef<string>(String($storage.get("mal.redirectUri") ?? "https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/callback.html"));
 		const setupFeedback = ctx.state<string | null>(null);
 
 		const application = {
@@ -459,7 +465,7 @@ function init() {
 				return String($storage.get("mal.clientSecret") ?? "");
 			},
 			get redirectUri() {
-				return String($storage.get("mal.redirectUri") ?? "http://localhost");
+				return String($storage.get("mal.redirectUri") ?? "https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/callback.html");
 			},
 			userAgent: "AniList ↔ MAL Sync for Seanime",
 			baseUri: "https://api.myanimelist.net/v2/",
@@ -1108,7 +1114,7 @@ function init() {
 						}),
 					], { gap: 1 }),
 					tray.text("• App Type: Web", { className: "text-xs text-[--muted]" }),
-					tray.text("• App Redirect URL: use exactly the Redirect URI shown below", { className: "text-xs text-[--muted]" }),
+					tray.text("• App Redirect URL: copy exactly the Redirect URI shown below (the hosted callback gives you a clean code page)", { className: "text-xs text-[--muted]" }),
 				], { gap: 1 });
 
 				const clientIdInput = tray.input({
@@ -1128,7 +1134,7 @@ function init() {
 
 				const redirectUriInput = tray.input({
 					label: "Redirect URI",
-					placeholder: "http://localhost",
+					placeholder: "https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/callback.html",
 					fieldRef: redirectUriRef,
 					disabled: state.loggingIn.get(),
 				});
@@ -1141,7 +1147,7 @@ function init() {
 					onClick: ctx.eventHandler("mal:save-client-config", () => {
 						const clientId = clientIdRef.current.trim();
 						const clientSecret = clientSecretRef.current.trim();
-						const redirectUri = redirectUriRef.current.trim() || "http://localhost";
+						const redirectUri = redirectUriRef.current.trim() || "https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/callback.html";
 
 						if (!clientId || !clientSecret) {
 							setupFeedback.set("Client ID and Client Secret are required.");
@@ -1274,7 +1280,7 @@ function init() {
 						saveKeysButton,
 						setupFeedback.get() ? tray.text(setupFeedback.get() ?? "", { className: "text-xs text-center text-[--muted]" }) : [],
 						authButton,
-						tray.text("After authorizing MAL, the browser may fail to open localhost. Copy the FULL URL from the address bar and paste it below; the plugin will extract the code automatically.", {
+						tray.text("After authorizing MAL, copy the code shown by the callback page and paste it below. You can also paste the full redirect URL; the plugin will extract ?code= automatically.", {
 							className: "text-xs text-[--muted] text-center",
 						}),
 						authToken,

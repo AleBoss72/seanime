@@ -1436,6 +1436,22 @@ function init() {
 										{ size: "md", className: "bg-no-repeat bg-center p-0", style: { width: "103.5px" } },
 									),
 								),
+								tray.button({
+									label: "Logout",
+									size: "md",
+									intent: "alert-subtle",
+									onClick: ctx.eventHandler("malsync:visible-signout", () => {
+										log.sendInfo("logout > Logging out");
+										state.loggingOut.set(true);
+										$storage.remove(notifications.id);
+										application.token.set(null);
+										application.userInfo.reset();
+										state.syncing.set(false);
+										ctx.toast.success("Logged out from MyAnimeList");
+										tabs.current.set(Tab.logon);
+										state.loggingOut.set(false);
+									}),
+								}),
 								tray.modal({
 									trigger: tray.div(
 										[

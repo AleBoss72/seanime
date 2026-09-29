@@ -446,10 +446,22 @@ function init() {
 			},
 		};
 
+		const clientIdRef = ctx.fieldRef<string>(String($storage.get("mal.clientId") ?? ""));
+		const clientSecretRef = ctx.fieldRef<string>(String($storage.get("mal.clientSecret") ?? ""));
+		const redirectUriRef = ctx.fieldRef<string>(String($storage.get("mal.redirectUri") ?? "http://localhost"));
+		const setupFeedback = ctx.state<string | null>(null);
+
 		const application = {
-			clientId: "204cc9247a57a5750a93787a6fbef485",
+			get clientId() {
+				return String($storage.get("mal.clientId") ?? "");
+			},
+			get clientSecret() {
+				return String($storage.get("mal.clientSecret") ?? "");
+			},
+			get redirectUri() {
+				return String($storage.get("mal.redirectUri") ?? "http://localhost");
+			},
 			userAgent: "AniList ↔ MAL Sync for Seanime",
-			redirectUri: "https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/callback.html",
 			baseUri: "https://api.myanimelist.net/v2/",
 			currentAuthUrl: ctx.state<string | null>(null),
 			legal: {
@@ -498,15 +510,23 @@ function init() {
 				},
 
 				generateAuthUrl() {
-					const { verifier, challenge } = PKCE.generatePair();
-					$store.set("mal:auth.verifier", challenge);
+					if (!application.clientId) {
+						application.currentAuthUrl.set(null);
+						setupFeedback.set("Enter and save your Client ID first.");
+						return;
+					}
+
+					// MyAnimeList OAuth uses PKCE with plain challenge.
+					// The verifier itself must therefore be sent as code_challenge.
+					const verifier = PKCE.generateCodeVerifier();
+					$store.set("mal:auth.verifier", verifier);
 
 					const url = new URL("https://myanimelist.net/v1/oauth2/authorize");
 					url.searchParams.set("response_type", "code");
 					url.searchParams.set("client_id", application.clientId);
 					url.searchParams.set("redirect_uri", application.redirectUri);
-					url.searchParams.set("code_challenge", challenge);
-					url.searchParams.set("code_challenge_method", "plain"); // MAL does not support S256
+					url.searchParams.set("code_challenge", verifier);
+					url.searchParams.set("code_challenge_method", "plain");
 					application.currentAuthUrl.set(url.toString());
 				},
 
@@ -520,6 +540,7 @@ function init() {
 						body: new URLSearchParams({
 							code,
 							client_id: application.clientId,
+							client_secret: application.clientSecret,
 							redirect_uri: application.redirectUri,
 							grant_type: "authorization_code",
 							code_verifier: codeVerifier,
@@ -553,6 +574,7 @@ function init() {
 						body: new URLSearchParams({
 							refresh_token: this.refreshToken.get()!,
 							client_id: application.clientId,
+							client_secret: application.clientSecret,
 							grant_type: "refresh_token",
 						} satisfies $malsync.RefreshAccessTokenBody),
 					});
@@ -1074,36 +1096,93 @@ function init() {
 						})
 					: [];
 
-				const info = tray.text(
-					"Click the button below to authorize the application, then copy the token from the website and paste it into the field below.",
-					{
-						style: {
-							textAlign: "center",
-							wordBreak: "normal",
-						},
-					},
-				);
+				const info = tray.stack([
+					tray.text("Connection Setup", { className: "font-semibold text-base" }),
+					tray.flex([
+						tray.text("1. Create an API app at ", { className: "text-sm" }),
+						tray.anchor({
+							text: "myanimelist.net/apiconfig",
+							href: "https://myanimelist.net/apiconfig",
+							target: "_blank",
+							className: "text-sm underline",
+						}),
+					], { gap: 1 }),
+					tray.text("• App Type: Web", { className: "text-xs text-[--muted]" }),
+					tray.text("• App Redirect URL: use exactly the Redirect URI shown below", { className: "text-xs text-[--muted]" }),
+				], { gap: 1 });
 
-				if (!application.currentAuthUrl.get()) {
+				const clientIdInput = tray.input({
+					label: "Client ID",
+					placeholder: "MyAnimeList Client ID",
+					fieldRef: clientIdRef,
+					disabled: state.loggingIn.get(),
+				});
+
+				const clientSecretInput = tray.input({
+					label: "Client Secret",
+					placeholder: "MyAnimeList Client Secret",
+					fieldRef: clientSecretRef,
+					disabled: state.loggingIn.get(),
+					type: "password",
+				});
+
+				const redirectUriInput = tray.input({
+					label: "Redirect URI",
+					placeholder: "http://localhost",
+					fieldRef: redirectUriRef,
+					disabled: state.loggingIn.get(),
+				});
+
+				const saveKeysButton = tray.button({
+					label: "Save Keys (Generates Link)",
+					intent: "gray-subtle",
+					size: "md",
+					className: "w-full",
+					onClick: ctx.eventHandler("mal:save-client-config", () => {
+						const clientId = clientIdRef.current.trim();
+						const clientSecret = clientSecretRef.current.trim();
+						const redirectUri = redirectUriRef.current.trim() || "http://localhost";
+
+						if (!clientId || !clientSecret) {
+							setupFeedback.set("Client ID and Client Secret are required.");
+							return;
+						}
+
+						$storage.set("mal.clientId", clientId);
+						$storage.set("mal.clientSecret", clientSecret);
+						$storage.set("mal.redirectUri", redirectUri);
+						redirectUriRef.setValue(redirectUri);
+
+						application.currentAuthUrl.set(null);
+						application.token.generateAuthUrl();
+						setupFeedback.set("Saved. You can now click Get Auth Code.");
+					}),
+				});
+
+				if (!application.currentAuthUrl.get() && application.clientId) {
 					application.token.generateAuthUrl();
 				}
 
-				const authButton = tray.anchor({
-					text: "Authorize",
-					href: application.currentAuthUrl.get() ?? "",
-					target: "_blank",
-					// prettier-ignore
-					className: "UI-Button_root whitespace-nowrap font-semibold rounded-lg inline-flex items-center transition ease-in text-center justify-center focus-visible:outline-none focus-visible:ring-2 ring-offset-1 ring-offset-[--background] focus-visible:ring-[--ring] disabled:opacity-50 disabled:pointer-events-none shadow-none text-[--gray] border bg-gray-100 border-transparent hover:bg-gray-200 active:bg-gray-300 dark:text-gray-300 dark:bg-opacity-10 dark:hover:bg-opacity-20 h-10 px-4 no-underline",
-					style: {
-						pointerEvents: state.loggingIn.get() ? "none" : "auto",
-						opacity: state.loggingIn.get() ? "0.5" : "1",
-						width: "100%",
-					},
-				});
+				const authButton = application.currentAuthUrl.get()
+					? tray.anchor({
+							text: "Get Auth Code",
+							href: application.currentAuthUrl.get() ?? "",
+							target: "_blank",
+							// prettier-ignore
+							className: "UI-Button_root whitespace-nowrap font-semibold rounded-lg inline-flex items-center transition ease-in text-center justify-center focus-visible:outline-none focus-visible:ring-2 ring-offset-1 ring-offset-[--background] focus-visible:ring-[--ring] disabled:opacity-50 disabled:pointer-events-none shadow-none text-blue-400 underline h-10 px-1 no-underline",
+							style: {
+								pointerEvents: state.loggingIn.get() ? "none" : "auto",
+								opacity: state.loggingIn.get() ? "0.5" : "1",
+								width: "100%",
+							},
+						})
+					: tray.text("Save your Client ID and Client Secret to generate the authorization link.", {
+							className: "text-xs text-[--muted] text-center",
+						});
 
 				const authToken = tray.input({
 					label: "\u200b",
-					placeholder: "Auth Code",
+					placeholder: "Auth Code or full redirect URL",
 					fieldRef: fieldRefs.authCode,
 					disabled: state.loggingIn.get(),
 					style: {
@@ -1122,17 +1201,27 @@ function init() {
 						width: "100%",
 					},
 					onClick: ctx.eventHandler("mal:login", async () => {
-						if (!fieldRefs.authCode.current.trim().length) {
-							state.loginError.set("Error: Please enter your Auth code");
+						let authValue = fieldRefs.authCode.current.trim();
+						if (!authValue.length) {
+							state.loginError.set("Error: Please enter your Auth code or paste the full redirect URL");
 							return;
-						} else {
-							state.loginError.set(null);
 						}
+
+						// Accept the full localhost redirect URL and extract ?code= automatically.
+						if (authValue.startsWith("http://") || authValue.startsWith("https://")) {
+							try {
+								const parsed = new URL(authValue);
+								authValue = parsed.searchParams.get("code") ?? authValue;
+								fieldRefs.authCode.setValue(authValue);
+							} catch (_) {}
+						}
+
+						state.loginError.set(null);
 
 						// start logging in
 						state.loggingIn.set(true);
 						try {
-							await application.token.exchangeCode(fieldRefs.authCode.current);
+							await application.token.exchangeCode(authValue);
 
 							log.sendSuccess("login > Successfully logged in!");
 
@@ -1176,9 +1265,23 @@ function init() {
 						],
 						{ className: "justify-center mt-3", gap: 0 },
 					),
-					tray.stack([error, info, authButton, authToken, tray.flex([logs, login], { className: "w-full" })], {
+					tray.stack([
+						error,
+						info,
+						clientIdInput,
+						clientSecretInput,
+						redirectUriInput,
+						saveKeysButton,
+						setupFeedback.get() ? tray.text(setupFeedback.get() ?? "", { className: "text-xs text-center text-[--muted]" }) : [],
+						authButton,
+						tray.text("After authorizing MAL, the browser may fail to open localhost. Copy the FULL URL from the address bar and paste it below; the plugin will extract the code automatically.", {
+							className: "text-xs text-[--muted] text-center",
+						}),
+						authToken,
+						tray.flex([logs, login], { className: "w-full" }),
+					], {
 						className: "justify-center items-center p-3",
-						style: { height: "28rem" },
+						style: { minHeight: "34rem" },
 					}),
 				]);
 			},

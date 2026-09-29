@@ -75,3 +75,10 @@ Some providers are adapted from MIT-licensed community implementations:
 - nnotwen / Seanime extensions (used as architectural reference for tracker plugins)
 
 See `THIRD_PARTY_NOTICES.md`.
+
+
+## Community repositories
+
+A curated list of external Seanime repositories and marketplaces is available in [community/README.md](community/README.md).
+
+These repositories stay external and are not automatically merged into this marketplace.

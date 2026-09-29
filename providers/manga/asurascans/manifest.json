@@ -1,7 +1,7 @@
 {
   "id": "asurascans",
   "name": "AsuraScans",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/providers/manga/asurascans/manifest.json",
   "language": "javascript",
   "type": "manga-provider",
@@ -10,5 +10,6 @@
   "icon": "https://raw.githubusercontent.com/Pal-droid/Seanime-Providers/main/public/asurascans.webp",
   "website": "https://asurascans.com",
   "lang": "en",
-  "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/providers/manga/asurascans/provider.js"
+  "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/2f286430c69c3eb7bc52d85e6dbe4fa12dc36741/providers/manga/asurascans/provider.js",
+  "notes": "Fetches the complete chapter list through the AsuraScans API with pagination."
 }

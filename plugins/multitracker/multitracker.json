@@ -6,11 +6,11 @@
   "language": "typescript",
   "type": "plugin",
   "description": "Bidirectional AniList and MyAnimeList synchronization for anime and manga in Seanime.",
-  "author": "AleBoss72 (based on nnotwen/MyAnimeListSync)",
+  "author": "AleBoss72",
   "icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/icon.png",
   "website": "https://github.com/AleBoss72/seanime",
   "lang": "en",
-  "notes": "Requires AniList login in Seanime. MAL OAuth currently uses the upstream MyAnimeListSync OAuth application/callback. Supports anime and manga, live Seanime/AniList → MAL updates, plus manual AniList → MAL and MAL → AniList list synchronization.",
+  "notes": "Requires AniList login in Seanime. MAL OAuth currently uses the upstream MyAnimeListSync OAuth application/callback. Supports anime and manga, live Seanime/AniList → MAL updates, plus manual AniList → MAL and MAL → AniList list synchronization. Based on nnotwen/MyAnimeListSync (MIT).",
   "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/main/plugins/multitracker/provider.ts",
   "plugin": {
     "version": "1",

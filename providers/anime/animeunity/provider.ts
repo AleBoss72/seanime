@@ -3,7 +3,13 @@
 
 class Provider {
 
-    private apiBaseUrl: string = "{{baseUrl}}";
+    // Keep existing Seanime configurations working after AnimeUnity moved
+    // from .so to .co. The manifest default is not retroactive for settings
+    // already saved by the user.
+    private apiBaseUrl: string = "{{baseUrl}}".replace(
+        /^https:\/\/(www\.)?animeunity\.so\/?$/,
+        "https://www.animeunity.co"
+    );
     private referrer: string = "{{referrer}}";
     private origin: string = "{{origin}}";
     private userAgent: string = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
@@ -218,17 +224,36 @@ class Provider {
         );
 
         // Fallback: if not found, take the first available stream
-        if (!selectedStream) {
+        if (!selectedStream && playlistStreams.length > 0) {
             console.log(`Server "${server}" not found, using the first available stream`);
             selectedStream = playlistStreams[0];
         }
 
+        // VixCloud may omit window.streams. In that case masterPlaylist.url is
+        // the playlist endpoint to use directly.
+        if (!selectedStream && masterPlaylist?.url) {
+            selectedStream = { url: masterPlaylist.url };
+        }
+        if (!selectedStream?.url || !masterPlaylist?.params) {
+            throw new Error("VixCloud playlist non disponibile nella pagina embed");
+        }
+
         console.log("Selected stream:", selectedStream);
         let playlistUrl = selectedStream.url.replace(/\\u0026/g, "&").replace("\u0026", "&");
-        playlistUrl = `${playlistUrl}&token=${masterPlaylist.params.token}&expires=${masterPlaylist.params.expires}&h=1`;
+        const playlistParams = new URLSearchParams({
+            token: masterPlaylist.params.token,
+            expires: masterPlaylist.params.expires,
+        });
+        if (embedHtml.includes("window.canPlayFHD = true") || embedHtml.includes("window.canPlayFHD=true")) {
+            playlistParams.set("h", "1");
+        }
+        playlistUrl += `${playlistUrl.includes("?") ? "&" : "?"}${playlistParams.toString()}`;
 
         response = await fetch(playlistUrl);
-        let playlistContent = response.text();
+        if (!response.ok) {
+            throw new Error(`VixCloud playlist request failed: ${response.status} ${response.statusText}`);
+        }
+        let playlistContent = await response.text();
 
         // #EXTM3U
 
@@ -267,7 +292,7 @@ class Provider {
 
             quality: stream.resolution,
             subtitles: [],
-            type: stream.url.includes('playlist') ? 'm3u8' : 'mp4',
+            type: stream.url.includes('/playlist/') || stream.url.includes('.m3u8') ? 'm3u8' : 'mp4',
             url: stream.url
 
         }));

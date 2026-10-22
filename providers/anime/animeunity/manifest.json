@@ -1,14 +1,14 @@
 {
   "id": "AnimeUnity",
   "name": "AnimeUnity",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/providers/anime/animeunity/manifest.json",
   "language": "typescript",
   "type": "onlinestream-provider",
   "description": "AnimeUnity streaming provider for Italian subbed/dubbed anime.",
   "author": "AleBoss72",
   "icon": "",
-  "website": "https://www.animeunity.so",
+  "website": "https://www.animeunity.co",
   "lang": "it",
   "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/providers/anime/animeunity/provider.ts",
   "userConfig": {
@@ -19,7 +19,7 @@
         "name": "baseUrl",
         "label": "Base URL",
         "type": "text",
-        "default": "https://www.animeunity.so"
+        "default": "https://www.animeunity.co"
       },
       {
         "name": "referrer",

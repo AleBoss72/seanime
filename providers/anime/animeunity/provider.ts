@@ -1,450 +1,272 @@
 /// <reference path="./onlinestream-provider.d.ts" />
 /// <reference path="./core.d.ts" />
 
-class Provider {
+const DEFAULT_BASE_URL = "https://www.animeunity.co";
+const VIXCLOUD_ORIGIN = "https://vixcloud.cc";
+const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+const SEARCH_PAGE_SIZE = 30;
+const EPISODE_PAGE_SIZE = 120;
+const MAX_SEARCH_PAGES = 10;
 
-    // Keep existing Seanime configurations working after AnimeUnity moved
-    // from .so to .co. The manifest default is not retroactive for settings
-    // already saved by the user.
-    private apiBaseUrl: string = "{{baseUrl}}".replace(
-        /^https:\/\/(www\.)?animeunity\.so\/?$/,
-        "https://www.animeunity.co"
-    );
-    private referrer: string = "{{referrer}}";
-    private origin: string = "{{origin}}";
-    private userAgent: string = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
-    private cookies: string = "";
-    private csrfToken: string = "";
+type AnimeRecord = {
+    id: string | number;
+    slug: string;
+    title?: string;
+    title_eng?: string;
+    title_it?: string;
+    anilist_id?: number;
+    dub?: number | boolean;
+};
+type SearchResponse = { records?: AnimeRecord[] };
+type EpisodeRecord = { id: string | number; number: string | number };
+type AnimeInfoResponse = { episodes_count: number; episodes?: EpisodeRecord[] };
+type MasterPlaylist = { url: string; params: { token: string; expires: string; asn?: string } };
+type HlsStream = { quality: string; url: string };
+type RequestHeaders = { [name: string]: string };
+
+class Provider {
+    private readonly apiBaseUrl = "{{baseUrl}}" || DEFAULT_BASE_URL;
+    private cookies = "";
+    private csrfToken = "";
     private cookiesExpirationDate: Date | null = null;
 
     getSettings(): Settings {
-        return {
-            episodeServers: ["Server1", "Server2"],
-            supportsDub: true,
-        }
+        return { episodeServers: ["Server1"], supportsDub: true };
     }
 
     async search(query: SearchOptions): Promise<SearchResult[]> {
-
-        let data: any[] = [];
-        let allTitles:any[] = [];
-        let allRecords: any[] = [];
-
-        let isManualSearch = !query.media.startDate || !query.media.startDate.year;
-        allTitles = (isManualSearch ? [query.query] : [query.media.romajiTitle, query.media.englishTitle, query['query'], ...query.media.synonyms]).filter(Boolean) as string[];
-
-        const smartSearch = $scannerUtils.buildSmartSearchTitles(allTitles);
-        smartSearch.titles.push(...allTitles); // Aggiungi i titoli originali alla fine della lista da provare, in modo che vengano comunque tentati se il "smart search" non funziona
-        const animeId = query.media.id;
-
-        console.log(`Smart search titles: ${smartSearch.titles.join(' | ')}`);
-        console.log(`Season: ${smartSearch.season}, Part: ${smartSearch.part}`);
-
-        let queriesToTry: string[] = [];
-        for (let title of smartSearch.titles) {
-            const cleaned = $scannerUtils.sanitizeQuery(title).toLowerCase().trim();
-            if (cleaned && !queriesToTry.includes(cleaned)) {
-                queriesToTry.push(cleaned);
-            }
-            const bsq = $scannerUtils.buildSearchQuery(title).toLowerCase().trim();
-            if (bsq && !queriesToTry.includes(bsq)) {
-                queriesToTry.push(bsq);
-            }
-        }
-
-        queriesToTry = [...queriesToTry.map(q => this._sanitizeTitle(q))];
-        console.log(`Queries to try: ${queriesToTry.join(', ')}`);
-
-        for (let searchQuery of queriesToTry) {
-            let offset = 0;
-            const pageSize = 30;
-            
-            
-            console.log(`Try: ${searchQuery}. Dubbed: ${query.dub ? 'Yes' : 'No'}`);
-
-            for (let page = 0; page < 10; page++) {
-                let postBody = {
-                    title: searchQuery,
-                    type: false,
-                    year: false,
-                    order: false,
-                    status: false,
-                    genres: false,
-                    offset: offset,
-                    dubbed: query.dub,
-                    season: false
-                };
-
-                let response = await this._postSearch(postBody);
-                if (!response) break;
-
-                let records: any[] = response.records || [];
-                console.log(`POST offset ${offset}: ${records.length} record`);
-
-                if (records.length === 0) break;
-
-                allRecords.push(...records);
-                
-                if(!isManualSearch) {
-                    // Step 1: Exact match for anilist_id
-                    data = allRecords.filter((x: any) => x?.anilist_id == animeId);
-                    if (data.length !== 0) {
-                        console.log(`Match found for anilist_id: ${animeId}`);
-                        break;
-                    }
-                }
-
-                // If less than pageSize, there are no more pages
-                if (records.length < pageSize) break;
-
-                offset += records.length;
-                $sleep(200);
-            }
-
-            if (data.length !== 0 && !isManualSearch) break;
-
-            $sleep(200);
-        }
-
-        console.log(`Anime found: ${isManualSearch ? allRecords.length : data.length} results`);
-
-        let filteredRecords = (isManualSearch ? allRecords : data).filter(x => {
-            // x.dub can be unreliable when the API doesn't filter (dubbed: false means "no filter")
-            // Use title "(ITA)" suffix as an additional dub indicator
-            const isDub = x.dub == 1 || (x.title && x.title.includes('(ITA)'));
-            return query.dub ? isDub : !isDub;
-        });
-        console.log(`Filtered by ${query.dub ? 'dub' : 'sub'}: ${filteredRecords.length} results`);
-
-        let finalResults: SearchResult[] = filteredRecords.map((item: any): SearchResult => (
-            {
-                id: `${item.id.toString()}-${item.slug}`,
-                title: item.title ?? item.title_eng ?? item.title_it,
-                url: `${this.apiBaseUrl}/anime/${item.id.toString()}-${item.slug}`,
-                subOrDub: item.dub == 1 ? 'dub' : 'sub'
-            }
-        ));
-
-        return finalResults;
-    }
-
-    /**
-     * POST to /archivio/get-animes with CSRF token and session cookie.
-     * header X-Requested-With: XMLHttpRequest is mandatory.
-     */
-    async _postSearch(body: any): Promise<any> {
-        try {
-            await this._updateCookies();
-
-            let response = await fetch(`${this.apiBaseUrl}/archivio/get-animes`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json, text/plain, */*",
-                    "X-Requested-With": "XMLHttpRequest",
-                    "X-CSRF-TOKEN": this.csrfToken,
-                    "Cookie": this.cookies,
-                    "Referer": `${this.apiBaseUrl}/archivio`,
-                    "Origin": this.apiBaseUrl,
-                    "User-Agent": this.userAgent
-                },
-                body: JSON.stringify(body)
-            });
-
-            if (!response.ok) {
-                console.error(`POST /archivio/get-animes failed: ${response.status} ${response.statusText}`);
-                return null;
-            }
-            
-
-            return response.json();
-        } catch (e: any) {
-            console.error(`POST search error: ${e.message || e}`);
-            return null;
-        }
-    }
-    async findEpisodes(id: string): Promise<EpisodeDetails[]> {
-
-        const animeId = id.split('-')[0];
-        const slug = id.split('-')[1];
-        let response = await this._makeRequest(`/info_api/${animeId}/0`, "GET", null, null, "json");
-        let episodesAmount = response["episodes_count"];
-        const episodes = await this._getAnimeEpisodes(0, episodesAmount, animeId, slug);
-
-        return episodes;
-    }
-    async findEpisodeServer(episode: EpisodeDetails, _server: string): Promise<EpisodeServer> {
-        let server = "server1"
-        if (_server !== "default") server = _server
-
-        console.log(`Finding episode server for episode ${episode.id} - server: ${server}`);
-
-        let embedUrl = await this._makeRequest(episode.url, "GET", null, null, "text");
-
-        console.log(`Embed URL: ${embedUrl}`);
-
-        let response = await fetch(embedUrl);
-
-        if (!response.ok) {
-            console.error("An error occured during the embed scraping. Error: " + response.statusText);
-            throw new Error(response.statusText);
-        }
-        const embedHtml = await response.text();
-
-        let playlistStreams: any = [];
-        let masterPlaylist: any;
-
-        if (embedHtml.includes('window.masterPlaylist')) {
-            let match = embedHtml.match(/window\.masterPlaylist\s*=\s*({[\s\S]*?}\s)/s);
-            if (match) {
-                let jsCode = `window = {}; window.masterPlaylist = ${match[1]}; return window.masterPlaylist;`;
-                masterPlaylist = new Function(jsCode)();
-                console.log("Master playlist:", masterPlaylist);
-            }
-        }
-
-        if (embedHtml.includes('window.streams')) {
-            let match = embedHtml.match(/window\.streams\s*=\s*(\[[\s\S]*?\]);/s);
-            if (match) {
-                let jsCode = `window = {}; window.streams = ${match[1]}; return window.streams;`;
-                playlistStreams = new Function(jsCode)();
-                console.log("Playlist streams:", playlistStreams);
-            }
-        }
-
-        // 2025-10-15 12:48:17 |DBG| log > {"params":{"asn":"","expires":"1765716497","token":"8bad3efd1da2779741b47a3f0080d256"},"url":"https://vixcloud.co/playlist/304645?b=1"}
-        // 2025-10-15 12:48:17 |DBG| log > [{"active":false,"name":"Server1","url":"https://vixcloud.co/playlist/304645?b=1\u0026ub=1"},{"active":1,"name":"Server2","url":"https://vixcloud.co/playlist/304645?b=1\u0026ab=1"}]
-
-        //GET Playlist urls
-        console.log(`_server: "${_server}", server: "${server}"`);
-        console.log(`Available streams: ${playlistStreams.map((s: any) => s.name).join(', ')}`);
-
-        let selectedStream = playlistStreams.find((playlist: any) =>
-            playlist.name.replace(/\s+/g, '').toLowerCase() === server.replace(/\s+/g, '').toLowerCase()
+        const isManualSearch = !query.media.startDate?.year;
+        const titles = (isManualSearch
+            ? [query.query]
+            : [query.media.romajiTitle, query.media.englishTitle, query.query, ...query.media.synonyms]
+        ).filter(Boolean) as string[];
+        const smartSearch = $scannerUtils.buildSmartSearchTitles(titles);
+        const records = await this.findAnimeRecords(
+            this.buildSearchQueries([...smartSearch.titles, ...titles]),
+            query.dub,
+            isManualSearch ? undefined : query.media.id,
         );
+        const filtered = records.filter(record => query.dub ? this.isDub(record) : !this.isDub(record));
 
-        // Fallback: if not found, take the first available stream
-        if (!selectedStream && playlistStreams.length > 0) {
-            console.log(`Server "${server}" not found, using the first available stream`);
-            selectedStream = playlistStreams[0];
-        }
+        console.log(`AnimeUnity search: ${filtered.length} ${query.dub ? "dub" : "sub"} result(s)`);
+        return filtered.map(record => ({
+            id: `${record.id}-${record.slug}`,
+            title: record.title ?? record.title_eng ?? record.title_it ?? record.slug,
+            url: `${this.apiBaseUrl}/anime/${record.id}-${record.slug}`,
+            subOrDub: this.isDub(record) ? "dub" : "sub",
+        }));
+    }
 
-        // VixCloud may omit window.streams. In that case masterPlaylist.url is
-        // the playlist endpoint to use directly.
-        if (!selectedStream && masterPlaylist?.url) {
-            selectedStream = { url: masterPlaylist.url };
-        }
-        if (!selectedStream?.url || !masterPlaylist?.params) {
-            throw new Error("VixCloud playlist non disponibile nella pagina embed");
-        }
+    async findEpisodes(id: string): Promise<EpisodeDetails[]> {
+        const [animeId, ...slugParts] = id.split("-");
+        const info = await this.getApi<AnimeInfoResponse>(`info_api/${animeId}/0`);
+        return this.getAnimeEpisodes(animeId, slugParts.join("-"), info.episodes_count);
+    }
 
-        console.log("Selected stream:", selectedStream);
-        let playlistUrl = selectedStream.url.replace(/\\u0026/g, "&").replace("\u0026", "&");
-        const playlistParams = new URLSearchParams({
-            token: masterPlaylist.params.token,
-            expires: masterPlaylist.params.expires,
-        });
-        if (embedHtml.includes("window.canPlayFHD = true") || embedHtml.includes("window.canPlayFHD=true")) {
-            playlistParams.set("h", "1");
-        }
-        playlistUrl += `${playlistUrl.includes("?") ? "&" : "?"}${playlistParams.toString()}`;
-
-        response = await fetch(playlistUrl);
-        if (!response.ok) {
-            throw new Error(`VixCloud playlist request failed: ${response.status} ${response.statusText}`);
-        }
-        let playlistContent = await response.text();
-
-        // #EXTM3U
-
-        // #EXT-X-STREAM-INF:BANDWIDTH=1200000,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=854x480
-
-        // https://vixcloud.co/playlist/304645?type=video&rendition=480p&token=0UAeINVLHokfgxA2XOmEbw&expires=1765717171&edge=au-u3-01
-
-        // #EXT-X-STREAM-INF:BANDWIDTH=2150000,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=1280x720
-
-        // https://vixcloud.co/playlist/304645?type=video&rendition=720p&token=eqC_pgU64QDVHP90n9g6IA&expires=1765717171&edge=au-u3-01
-
-        // #EXT-X-STREAM-INF:BANDWIDTH=4500000,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=1920x1080
-
-        // https://vixcloud.co/playlist/304645?type=video&rendition=1080p&token=FiJectPI0_goEM35lIwtuA&expires=1765717171&edge=au-u3-01
-
-        const lines: string[] = playlistContent.split('\n').map((line: any) => line.trim()).filter(line => line !== '');
-        const streams: any[] = [];
-
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-
-            if (line.startsWith('#EXT-X-STREAM-INF')) {
-                const match = line.match(/RESOLUTION=(\d+x\d+)/);
-                const resolution = match ? match[1] : 'Unknown';
-
-                const url = lines[i + 1] || '';
-
-                streams.push({
-                    resolution: resolution.split('x')[1] + 'p',
-                    url: url
-                });
-            }
-        }
-
-        const videoSources: VideoSource[] = streams.map((stream: any): VideoSource => ({
-
-            quality: stream.resolution,
-            subtitles: [],
-            type: stream.url.includes('/playlist/') || stream.url.includes('.m3u8') ? 'm3u8' : 'mp4',
-            url: stream.url
-
+    async findEpisodeServer(episode: EpisodeDetails, server: string): Promise<EpisodeServer> {
+        const embedUrl = await this.getApiText(episode.url);
+        const embedHtml = await this.getText(embedUrl.trim(), "VixCloud embed");
+        const playlistUrl = this.buildPlaylistUrl(this.parseMasterPlaylist(embedHtml), embedHtml);
+        const playlistContent = await this.getText(playlistUrl, "VixCloud playlist");
+        const videoSources = this.parseHlsPlaylist(playlistContent, playlistUrl).map(stream => ({
+            quality: stream.quality, subtitles: [], type: "m3u8", url: stream.url,
         }));
 
-        const serverResult: EpisodeServer = {
-            server: server,
+        if (videoSources.length === 0) throw new Error("VixCloud playlist contains no playable streams");
+        return {
+            server: server === "default" ? "Server1" : server,
+            headers: this.getVixCloudHeaders(embedUrl),
+            videoSources,
+        };
+    }
+
+    private buildSearchQueries(titles: string[]): string[] {
+        const queries = new Set<string>();
+        for (const title of titles) {
+            for (const candidate of [$scannerUtils.sanitizeQuery(title), $scannerUtils.buildSearchQuery(title)]) {
+                const sanitized = this.sanitizeTitle(candidate);
+                if (sanitized) queries.add(sanitized);
+            }
+        }
+        console.log(`AnimeUnity search queries: ${[...queries].join(", ")}`);
+        return [...queries];
+    }
+
+    private async findAnimeRecords(queries: string[], dubbed: boolean, anilistId?: number): Promise<AnimeRecord[]> {
+        const records = new Map<string, AnimeRecord>();
+        for (const title of queries) {
+            for (let offset = 0; offset < SEARCH_PAGE_SIZE * MAX_SEARCH_PAGES; offset += SEARCH_PAGE_SIZE) {
+                const pageRecords = (await this.searchPage(title, offset, dubbed)).records ?? [];
+                pageRecords.forEach(record => records.set(`${record.id}-${record.slug}`, record));
+                if (anilistId && pageRecords.some(record => record.anilist_id === anilistId)) {
+                    return [...records.values()].filter(record => record.anilist_id === anilistId);
+                }
+                if (pageRecords.length < SEARCH_PAGE_SIZE) break;
+            }
+        }
+        const found = [...records.values()];
+        return anilistId ? found.filter(record => record.anilist_id === anilistId) : found;
+    }
+
+    private async searchPage(title: string, offset: number, dubbed: boolean): Promise<SearchResponse> {
+        await this.ensureSession();
+        const response = await fetch(`${this.apiBaseUrl}/archivio/get-animes`, {
+            method: "POST",
             headers: {
-                "Referer": this.referrer,
-                "Origin": this.origin,
-                "User-Agent": this.userAgent
+                ...this.getAnimeUnityHeaders(), "Accept": "application/json, text/plain, */*",
+                "Content-Type": "application/json", "Origin": this.apiBaseUrl,
+                "Referer": `${this.apiBaseUrl}/archivio`, "X-Requested-With": "XMLHttpRequest",
             },
-            videoSources: videoSources
-        }
-
-        return serverResult;
+            body: JSON.stringify({ title, type: false, year: false, order: false, status: false, genres: false, offset, dubbed, season: false }),
+        });
+        if (!response.ok) throw new Error(`AnimeUnity search failed: ${response.status} ${response.statusText}`);
+        return response.json();
     }
 
-    async _updateCookies(): Promise<void> {
-
-        let now: Date = new Date();
-
-        if (this.cookiesExpirationDate == null || this.cookiesExpirationDate < now) {
-            try {
-                let response = await fetch(this.apiBaseUrl, { method: "GET" });
-
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-                // Salva TUTTI i cookie dalla risposta (XSRF-TOKEN + session)
-                let cookiePairs: string[] = [];
-                let responseCookies = response.cookies;
-                for (let name in responseCookies) {
-                    cookiePairs.push(`${name}=${responseCookies[name]}`);
-                }
-                this.cookies = cookiePairs.join("; ");
-
-                // Estrai CSRF token dall'HTML della pagina (meta tag)
-                let html = response.text();
-                let $ = LoadDoc(html);
-                let csrfMeta = $('meta[name="csrf-token"]').attr('content');
-                if (csrfMeta) {
-                    this.csrfToken = csrfMeta;
-                    console.log("CSRF token extracted from meta tag");
-                }
-
-                // Scadenza: 1 ora da adesso
-                this.cookiesExpirationDate = new Date(now.getTime() + 3600000);
-            }
-            catch (error: any) {
-                console.error(error);
-            }
-        }
-    }
-
-    async _makeRequest(endpoint: string, method: string = "GET", body: any = null, headers: any = null, returnType: "json" | "text" = "text"): Promise<string | any> {
-
-        try {
-            await this._updateCookies();
-
-            if (!headers) headers = {}
-
-            if (this.cookies) headers["Cookie"] = this.cookies
-            if (this.csrfToken) headers["X-CSRF-TOKEN"] = this.csrfToken;
-            headers["User-Agent"] = this.userAgent;
-            let options: RequestInit = {
-                method: method,
-                headers: headers,
-                credentials: "include"
-            }
-
-            if (body) {
-                if (method === "GET") {
-                    endpoint += "?" + new URLSearchParams(body).toString()
-                } else {
-                    options.body = JSON.stringify(body)
-                    headers["Content-Type"] = "application/json"
-                }
-            }
-            let response = await fetch(`${this.apiBaseUrl}/${endpoint}`, options)
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-
-            if (returnType === "text") return await response.text();
-
-            return await response.json()
-        }
-        catch (error: any) {
-            console.error(error);
-        }
-    }
-
-    async _getAnimeEpisodes(start: number, end: number, animeId: string | number, slug: string, episodeLimitForIteration: number = 120): Promise<EpisodeDetails[]> {
-
+    private async getAnimeEpisodes(animeId: string, slug: string, count: number): Promise<EpisodeDetails[]> {
         const episodes: EpisodeDetails[] = [];
-        let current = start;
-        let endRange = Math.min(start + episodeLimitForIteration, end);
-
-        console.log(`START - Current: ${current} - endRange: ${endRange}`);
-
-        while (current < end) {
-            let response = await this._makeRequest(`/info_api/${animeId}/0?start_range=${current + 1}&end_range=${endRange}`, "GET", null, null, "json");
-
-            let returnedEpisoeds: EpisodeDetails[] = response.episodes.map((episode: any, index: number): EpisodeDetails => (
-                {
-                    id: episode.id.toString(),
-                    number: Number(episode.number) ?? index + 1,
-                    url: `embed-url/${episode.id.toString()}`
-                }
-            ));
-
-            episodes.push(...returnedEpisoeds);
-            current = endRange;
-            endRange = Math.min(current + episodeLimitForIteration, end);
-
-            console.log(`WHILE - Current: ${current} - endRange: ${endRange}`);
+        for (let start = 1; start <= count; start += EPISODE_PAGE_SIZE) {
+            const end = Math.min(start + EPISODE_PAGE_SIZE - 1, count);
+            const page = await this.getApi<AnimeInfoResponse>(`info_api/${animeId}/0?start_range=${start}&end_range=${end}`);
+            episodes.push(...(page.episodes ?? []).map((episode, index) => this.toEpisode(episode, start + index)));
         }
-
-        if(episodes.length === 0){
-            // Fallback to the main episode page
-            let response = await this._makeRequest(`/anime/${animeId}-${slug}`, "GET", null, null, "text");
-            if(!response){
-                console.error("Failed to fetch episode page for fallback");
-                return [];
-            }
-            let $ = LoadDoc(response);
-            let videoPlayerElement = $('video-player');
-            let episodesJson = videoPlayerElement.attr("episodes");
-            if (!episodesJson) {
-                console.error("Failed to extract anime data from video player for fallback");
-                return [];
-            }
-            console.log("Found anime data in video player, using it for fallback episode list");
-            episodesJson = JSON.parse(episodesJson);
-
-            if(episodesJson && Array.isArray(episodesJson)){
-                console.log("Episodes found in video player data for fallback:", episodesJson.length);
-                episodesJson.forEach((episode: any) => {
-                    episodes.push({
-                        id: episode['id'].toString(),
-                        number: Number(episode.number),
-                        url: `embed-url/${episode['id'].toString()}`
-                    });
-                });
-            }
-        }
-
-        return episodes;
+        return episodes.length > 0 ? episodes : this.getEpisodesFromPage(animeId, slug);
     }
 
-    _sanitizeTitle(title: string): string {
-        console.log(`Sanitizing title: "${title}"`);
-        return title.toLowerCase()
-            .split(/[\-_:]+/)[0]
-            .replace(/\s+/g, " ")
-            .trim();
+    private async getEpisodesFromPage(animeId: string, slug: string): Promise<EpisodeDetails[]> {
+        const attribute = LoadDoc(await this.getApiText(`anime/${animeId}-${slug}`))("video-player").attr("episodes");
+        if (!attribute) return [];
+        try {
+            const records = JSON.parse(attribute) as EpisodeRecord[];
+            return Array.isArray(records) ? records.map((episode, index) => this.toEpisode(episode, index + 1)) : [];
+        } catch {
+            console.error("AnimeUnity fallback episode list is not valid JSON");
+            return [];
+        }
+    }
+
+    private toEpisode(episode: EpisodeRecord, fallbackNumber: number): EpisodeDetails {
+        const number = Number(episode.number);
+        return { id: String(episode.id), number: Number.isFinite(number) ? number : fallbackNumber, url: `embed-url/${episode.id}` };
+    }
+
+    private parseMasterPlaylist(html: string): MasterPlaylist {
+        const playlistObject = this.extractAssignedObject(html, "window.masterPlaylist");
+        const paramsObject = playlistObject && this.extractPropertyObject(playlistObject, "params");
+        const url = playlistObject && this.extractStringProperty(playlistObject, "url");
+        const token = paramsObject && this.extractStringProperty(paramsObject, "token");
+        const expires = paramsObject && this.extractStringProperty(paramsObject, "expires");
+        const asn = paramsObject && this.extractStringProperty(paramsObject, "asn");
+        if (!url || !token || !expires) throw new Error("VixCloud embed is missing master playlist data");
+        return { url, params: { token, expires, ...(asn ? { asn } : {}) } };
+    }
+
+    private buildPlaylistUrl(master: MasterPlaylist, html: string): string {
+        const playlist = new URL(master.url);
+        playlist.searchParams.set("token", master.params.token);
+        playlist.searchParams.set("expires", master.params.expires);
+        if (master.params.asn) playlist.searchParams.set("asn", master.params.asn);
+        if (/window\.canPlayFHD\s*=\s*true\b/.test(html)) playlist.searchParams.set("h", "1");
+        return playlist.toString();
+    }
+
+    private parseHlsPlaylist(content: string, playlistUrl: string): HlsStream[] {
+        const lines = content.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+        const streams: HlsStream[] = [];
+        for (let index = 0; index < lines.length; index++) {
+            if (!lines[index].startsWith("#EXT-X-STREAM-INF")) continue;
+            const streamUrl = lines[index + 1];
+            if (!streamUrl || streamUrl.startsWith("#")) continue;
+            const resolution = lines[index].match(/RESOLUTION=\d+x(\d+)/)?.[1];
+            streams.push({ quality: resolution ? `${resolution}p` : "auto", url: new URL(streamUrl, playlistUrl).toString() });
+        }
+        return streams.length > 0 || !content.includes("#EXTM3U") ? streams : [{ quality: "auto", url: playlistUrl }];
+    }
+
+    private extractAssignedObject(source: string, assignment: string): string | null {
+        const assignmentIndex = source.indexOf(assignment);
+        const openingBrace = assignmentIndex < 0 ? -1 : source.indexOf("{", assignmentIndex + assignment.length);
+        return openingBrace < 0 ? null : this.extractBalancedObject(source, openingBrace);
+    }
+
+    private extractPropertyObject(source: string, property: string): string | null {
+        const match = new RegExp(`(?:['"]?${property}['"]?)\\s*:`).exec(source);
+        const openingBrace = match ? source.indexOf("{", match.index + match[0].length) : -1;
+        return openingBrace < 0 ? null : this.extractBalancedObject(source, openingBrace);
+    }
+
+    private extractBalancedObject(source: string, start: number): string | null {
+        let depth = 0, quote = "", escaped = false;
+        for (let index = start; index < source.length; index++) {
+            const character = source[index];
+            if (quote) {
+                if (escaped) escaped = false;
+                else if (character === "\\") escaped = true;
+                else if (character === quote) quote = "";
+            } else if (character === "'" || character === '"') quote = character;
+            else if (character === "{") depth++;
+            else if (character === "}" && --depth === 0) return source.slice(start, index + 1);
+        }
+        return null;
+    }
+
+    private extractStringProperty(source: string, property: string): string | null {
+        const match = new RegExp(`(?:['"]?${property}['"]?)\\s*:\\s*(['"])([\\s\\S]*?)\\1`).exec(source);
+        return match ? match[2].replace(/\\u0026/g, "&").replace(/\\(['"])/g, "$1") : null;
+    }
+
+    private async getApi<T>(endpoint: string): Promise<T> {
+        return this.getApiResponse<T>(endpoint, "json");
+    }
+
+    private async getApiText(endpoint: string): Promise<string> {
+        return this.getApiResponse<string>(endpoint, "text");
+    }
+
+    private async getApiResponse<T>(endpoint: string, responseType: "json" | "text"): Promise<T> {
+        await this.ensureSession();
+        const response = await fetch(this.getApiUrl(endpoint), { headers: this.getAnimeUnityHeaders(), credentials: "include" });
+        if (!response.ok) throw new Error(`AnimeUnity request failed (${endpoint}): ${response.status} ${response.statusText}`);
+        return responseType === "json" ? response.json() : response.text() as Promise<T>;
+    }
+
+    private async ensureSession(): Promise<void> {
+        if (this.cookiesExpirationDate && this.cookiesExpirationDate > new Date()) return;
+        const response = await fetch(this.apiBaseUrl, { headers: { "User-Agent": USER_AGENT } });
+        if (!response.ok) throw new Error(`AnimeUnity session request failed: ${response.status} ${response.statusText}`);
+
+        const responseCookies = response.cookies ?? {};
+        this.cookies = Object.keys(responseCookies).map(name => `${name}=${responseCookies[name]}`).join("; ");
+        const csrfToken = LoadDoc(await response.text())('meta[name="csrf-token"]').attr("content");
+        if (!csrfToken) throw new Error("AnimeUnity CSRF token not found");
+        this.csrfToken = csrfToken;
+        this.cookiesExpirationDate = new Date(Date.now() + 60 * 60 * 1000);
+    }
+
+    private getApiUrl(endpoint: string): string {
+        return `${this.apiBaseUrl.replace(/\/$/, "")}/${endpoint.replace(/^\//, "")}`;
+    }
+
+    private getAnimeUnityHeaders(): RequestHeaders {
+        return { "Cookie": this.cookies, "User-Agent": USER_AGENT, ...(this.csrfToken ? { "X-CSRF-TOKEN": this.csrfToken } : {}) };
+    }
+
+    private getVixCloudHeaders(embedUrl: string): RequestHeaders {
+        const origin = new URL(embedUrl).origin || VIXCLOUD_ORIGIN;
+        return { "Origin": origin, "Referer": `${origin}/`, "User-Agent": USER_AGENT };
+    }
+
+    private async getText(url: string, label: string): Promise<string> {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`${label} request failed: ${response.status} ${response.statusText}`);
+        return response.text();
+    }
+
+    private isDub(record: AnimeRecord): boolean {
+        return record.dub === 1 || record.dub === true || record.title?.includes("(ITA)") === true;
+    }
+
+    private sanitizeTitle(title: string): string {
+        return title.toLowerCase().split(/[\-_:]+/)[0].replace(/\s+/g, " ").trim();
     }
 }

@@ -1,7 +1,7 @@
 {
   "id": "AnimeUnity",
   "name": "AnimeUnity",
-  "version": "1.1.5",
+  "version": "1.2.0",
   "manifestURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/providers/anime/animeunity/manifest.json",
   "language": "typescript",
   "type": "onlinestream-provider",
@@ -13,25 +13,13 @@
   "payloadURI": "https://raw.githubusercontent.com/AleBoss72/seanime/refs/heads/main/providers/anime/animeunity/provider.ts",
   "userConfig": {
     "requiresConfig": false,
-    "version": 1,
+    "version": 2,
     "fields": [
       {
         "name": "baseUrl",
         "label": "Base URL",
         "type": "text",
         "default": "https://www.animeunity.co"
-      },
-      {
-        "name": "referrer",
-        "label": "Referrer",
-        "type": "text",
-        "default": "https://vixcloud.co/"
-      },
-      {
-        "name": "origin",
-        "label": "Origin",
-        "type": "text",
-        "default": "https://vixcloud.co"
       }
     ]
   }

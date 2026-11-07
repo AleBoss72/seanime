@@ -256,9 +256,24 @@ class Provider {
         return { "Origin": origin, "Referer": `${origin}/`, "User-Agent": USER_AGENT };
     }
 
+    
     private async getText(url: string, label: string): Promise<string> {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`${label} request failed: ${response.status} ${response.statusText}`);
+        const hostname = new URL(url).hostname;
+        const vixcloudHostname = new URL(VIXCLOUD_ORIGIN).hostname;
+
+        const isVixCloud = hostname === vixcloudHostname ||
+            hostname.endsWith(`.${vixcloudHostname}`);
+
+        const response = await fetch(url, {
+            ...(isVixCloud && {
+                headers: this.getVixCloudHeaders(url),
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`${label} request failed: ${response.status} ${response.statusText}`);
+        }
+
         return response.text();
     }
 
